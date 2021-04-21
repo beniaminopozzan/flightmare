@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 
 import numpy as np
-import torch
+from scipy.spatial.transform import Rotation as R
 
 class PointCloudGenerator():
     def __init__(self,
@@ -19,20 +19,28 @@ class PointCloudGenerator():
         self.mask = np.ones((self._frame_height*self._frame_width,3))
         # the mask is a (TotNumberOfPixel x 3) array where each row represent a point
         # the first column is the x-coordinate, the second colum is the y-coordinate
-        # and the third column is the z-coodinate normalized to 1
+        # and the third column is the z-coodinate
         # the actual point is computed multiplying each row by the point actual depth.
+        # The points are in the body reference frame
         ind = 0
         for px in list(range(self._frame_width)):
             x = (px/self._frame_width) - 0.5 # maps to (-0.5, 0.5)
             for py in list(range(self._frame_height)):
-                y = -(py/self._frame_height) + 0.5 # maps to (-0.5, 0.5) with inversion
-                self.mask[ind,0] = x / self.fl
-                self.mask[ind,1] = y / self.fl
+                y = (py/self._frame_height) - 0.5 # maps to (-0.5, 0.5)
+                self.mask[ind,0] = x / self.fl # the x axis in the image plane is the x axis in the camera frame
+                self.mask[ind,2] = y / self.fl # the y axis in the image plane is the inverse of the z axis in the camera frame
+                # the depth axis of the image plane is the y axis in the camera frame: self.mask[ind,1] = 1
                 ind = ind + 1
+        
+        # rotate camera mask
+        r = (R.from_euler('ZYX', [-90.0, 0.0, 5.0], degrees=True)).as_matrix()
+        self.mask = np.transpose( np.dot(r, self.mask.transpose()) )
 
-    # given a depthMap compute the pointCloud
-    def generatePointCloudFromDepthMap(self, images):
-        pointCloud = self.mask * images.reshape((self._frame_height*self._frame_width,1),order='F')
-        # save estrapolated pointCloud for debugging
-        #np.savetxt("pointCloud.dat",pointCloud)
-        return torch.from_numpy(pointCloud)
+    # given a depthMap compute the point cloud
+    def generate_point_cloud_from_depthmap(self, images):
+        # apply mask
+        point_cloud = self.mask * images.reshape((self._frame_height*self._frame_width,1),order='F')
+        # move camera frame origin w.r.t. quadrotor frame origin
+        point_cloud = point_cloud + [0.176, 0.0, 0.05]
+        
+        return point_cloud

@@ -4,7 +4,7 @@ import numpy as np
 import math
 from typing import List
 
-from pointCloudGenerator import PointCloudGenerator
+from point_cloud_generator import PointCloudGenerator
 import torch
 
 class ObstacleAvoidanceAgent():
@@ -14,7 +14,7 @@ class ObstacleAvoidanceAgent():
                ):
     self._num_envs = num_envs
     self._num_acts = num_acts
-    self._pointCloudGenerator = PointCloudGenerator()
+    self._point_cloud_generator = PointCloudGenerator()
     
     # initialization
         
@@ -24,12 +24,15 @@ class ObstacleAvoidanceAgent():
     # save current depthMap for debugging
     #np.savetxt("depthImage.dat",image)
 
-    pointCloud = self._pointCloudGenerator.generatePointCloudFromDepthMap(image)
-    
+    point_cloud = self._point_cloud_generator.generate_point_cloud_from_depthmap(image)
+    # save estrapolated point cloud for debugging
+    #np.savetxt("pointCloud.dat",point_cloud)
 
     # ignorantissima pausa per veder che succede
+    #print(obs)
     #input("ciao")
 
     action = np.zeros([self._num_envs,self._num_acts], dtype=np.float32)
-    action[0,0] += -0.01
+    #action[0,0] += -0.01
+    #action[0,3] += -0.01
     return action
