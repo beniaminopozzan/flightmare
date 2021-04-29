@@ -56,7 +56,7 @@ class ObstacleAvoidanceAgent():
     #des_vel_local = R.from_euler('Z',obs[0,3]).apply(des_vel_global, inverse=True)
 
     pos_error = current_goal_position - obs[:3]
-    pos_error = 0.1 * pos_error
+    pos_error = pos_error / np.linalg.norm(pos_error)
     angles = R.from_euler('ZYX',obs[3:6]).as_euler('ZYX')
     des_vel_local = R.from_euler('Z',angles[0]).apply(pos_error, inverse=True)
     #print(pos_error)

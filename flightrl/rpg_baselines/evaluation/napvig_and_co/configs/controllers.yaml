@@ -89,6 +89,6 @@ PID_control_params:
 # from NAPVIG to PIDs
 mid_level_controller:
   k_omega: 1.0
-  k: [3.0 , 0.0, 3.0]
-  sigma: 0.5
+  k: [5.0 , 0.7, 5.0]
+  sigma: 0.9
   
