@@ -13,29 +13,104 @@ class QuadrotorPIDcontroller():
         self.B_inv = np.linalg.inv(self.B)
         
         # x and y rate, body frame, controllers. Outputs: desired linear acceleration
+        # that is then converted to desired angle
         self.x_rate_controller = PID(k_p=5, u_max=9.81*np.pi/4, u_min=-9.81*np.pi/4)
         self.y_rate_controller = PID(k_p=5, u_max=9.81*np.pi/4, u_min=-9.81*np.pi/4)
 
-        # pitch rate controller
-        self.pitch_rate_controller = PID(k_p=1, u_max=2.0, u_min=-2.0)
-        # pitch controller
+        # pitch controller. Output: desired pitch rate
         self.pitch_controller = PID(k_p=5, u_max=2, u_min=-2)
-        # roll rate controller
-        self.roll_rate_controller = PID(k_p=1, u_max=2.0, u_min=-2.0)
-        # roll controller
+        # pitch rate controller. Output: desired pitch torque
+        self.pitch_rate_controller = PID(k_p=1, u_max=2.0, u_min=-2.0)
+        # roll controller. Output: desired roll rate
         self.roll_controller = PID(k_p=5, u_max=2, u_min=-2)
+        # roll rate controller. Output: desired roll torque
+        self.roll_rate_controller = PID(k_p=1, u_max=2.0, u_min=-2.0)
 
-        # yaw rate controller
+        # yaw controller. Output: desired yaw rate
+        # self.yaw_controller = PID(k_p=2, u_max=0.5, u_min=-0.5)
+        # yaw rate controller. Output: desired yaw torque
         self.yaw_rate_controller = PID(k_p=1,u_max=0.05,u_min=-0.05)
-        # yaw controller
-        self.yaw_controller = PID(k_p=2, u_max=0.5, u_min=-0.5)
 
-        # altitude rate controller
+        # altitude rate controller. Output: desired thrust (gravity not compensated)
         self.altitude_rate_controller = PID(k_p=10, k_i=2, k_d=1)
 
+        # files for debugging
         #self.f = open('pitch.dat','a')
         #self.q = open('Rmat.dat','a')
+    
+    def apply(self, obs, ref):
 
+        # retrieve the references
+        yaw_rate_ref = ref[0]
+        x_rate_ref = ref[1]
+        y_rate_ref = ref[2]
+        elev_rate_ref = ref[3]
+        # retrive all the data from the observation
+        r=R.from_euler('ZYX',obs[3:6])
+        angles = r.as_euler('ZYX')
+        yaw_angle = angles[0]
+        pitch_angle = angles[1]
+        roll_angle = angles[2]
+        x_rate = np.cos(yaw_angle)*obs[6] + np.sin(yaw_angle)*obs[7]    #"body" (yaw compensated) frame
+        y_rate = -np.sin(yaw_angle)*obs[6] + np.cos(yaw_angle)*obs[7]   #"body" (yaw compensated) frame
+        elev_rate = obs[8]
+        roll_rate = obs[9]
+        pitch_rate = obs[10]
+        yaw_rate = obs[11]
+
+        # apply elevation rate controller
+        elev_rate_e = elev_rate_ref - elev_rate
+        thrust = self.altitude_rate_controller.apply(elev_rate_e) + 0.73*9.81
+        
+        # apply linear velocities controllers
+        x_rate_e = x_rate_ref - x_rate
+        pitch_ref = 0.73/thrust * self.x_rate_controller.apply(x_rate_e)
+        y_rate_e = y_rate_ref - y_rate
+        roll_ref = -0.73/thrust * self.y_rate_controller.apply(y_rate_e)
+
+        # apply pitch controllers (angle and rate)
+        pitch_e = pitch_ref - pitch_angle
+        pitch_rate_ref = self.pitch_controller.apply(pitch_e)
+        pitch_rate_e = pitch_rate_ref - pitch_rate        
+        tau_y = self.pitch_rate_controller.apply(pitch_rate_e)
+
+        # apply roll controllers (angle and rate)
+        roll_e = roll_ref - roll_angle
+        roll_rate_ref = self.roll_controller.apply(roll_e)
+        roll_rate_e = roll_rate_ref - roll_rate        
+        tau_x = self.roll_rate_controller.apply(roll_rate_e)
+
+        # apply yaw controller (rate ONLY)
+        #yaw_e = yaw_ref - yaw_angle
+        #yaw_rate_ref = self.yaw_controller.apply(yaw_e)
+        yaw_rate_e = yaw_rate_ref - yaw_rate
+        tau_z = self.yaw_rate_controller.apply(yaw_rate_e)
+
+        # print("thrust={2:>{0}.{1}f}".format(10,3,thrust))
+        # print("     yaw_ref={2:>{0}.{1}f};   yaw_angle={3:>{0}.{1}f}".format(6,3,yaw_ref,yaw_angle))
+        # print("yaw_rate_ref={2:>{0}.{1}f};    yaw_rate={3:>{0}.{1}f};   tau_z={4:>{0}.{1}f}".format(6,3,yaw_rate_ref,yaw_rate,tau_z))
+
+
+        # print("  yaw={2:>{0}.{1}f};   yaw_rate={3:>{0}.{1}f}".format(6,3,yaw_angle,yaw_rate))
+        # print("pitch={2:>{0}.{1}f}; pitch_rate={3:>{0}.{1}f}".format(6,3,pitch_angle,pitch_rate))
+        # print(" roll={2:>{0}.{1}f};  roll_rate={3:>{0}.{1}f}".format(6,3,roll_angle,roll_rate))
+
+        # print("x rate={2:>{0}.{1}f}; y rate={3:>{0}.{1}f}".format(6,3,x_rate,y_rate))
+
+        # print("thrust={2:>{0}.{1}f}".format(10,3,thrust))
+        # print("    x_rate_ref={2:>{0}.{1}f};        x_rate={3:>{0}.{1}f}".format(6,3,x_rate_ref,x_rate))
+        # print("     pitch_ref={2:>{0}.{1}f};   pitch_angle={3:>{0}.{1}f}".format(6,3,pitch_ref,pitch_angle))
+        # print("pitch_rate_ref={2:>{0}.{1}f};     pitch_rate={3:>{0}.{1}f};   tau_y={4:>{0}.{1}f}".format(6,3,pitch_rate_ref,pitch_rate,tau_y))
+
+        #np.savetxt(self.f,np.array([obs[4]]))
+
+        
+        #np.savetxt(self.q,r.reshape((1,9),order='F'))
+        
+
+        return np.dot(self.B_inv, np.array([[thrust,tau_x,tau_y,tau_z]]).transpose())
+    
+    ### unused methods    
     # def retrieve_yaw(self,obs):
     #     number_of_half_turns = self.yaw_angle // (np.pi)
     #     yaw = obs[3]
@@ -55,78 +130,6 @@ class QuadrotorPIDcontroller():
     #     elif delta < -np.pi/2:
     #         delta = np.pi + delta
     #     self.pitch_angle = self.pitch_angle + delta
-
-    
-    def apply(self, obs, ref):
-        #self.retrieve_yaw(obs)
-        #self.retrieve_pitch(obs)
-
-        yaw_ref = ref[0]
-        x_rate_ref = ref[1]
-        y_rate_ref = ref[2]
-        elev_rate_ref = ref[3]
-
-        r=R.from_euler('ZYX',obs[3:6])
-        angles = r.as_euler('ZYX')
-        yaw_angle = angles[0]
-        pitch_angle = angles[1]
-        roll_angle = angles[2]
-        x_rate = np.cos(yaw_angle)*obs[6] + np.sin(yaw_angle)*obs[7]
-        y_rate = -np.sin(yaw_angle)*obs[6] + np.cos(yaw_angle)*obs[7]
-        elev_rate = obs[8]
-        roll_rate = obs[9]
-        pitch_rate = obs[10]
-        yaw_rate = obs[11]
-
-        elev_rate_e = elev_rate_ref - elev_rate
-        thrust = self.altitude_rate_controller.apply(elev_rate_e) + 0.73*9.81
-        
-        x_rate_e = x_rate_ref - x_rate
-        pitch_ref = 0.73/thrust * self.x_rate_controller.apply(x_rate_e)
-        #pitch_ref = 1/9.81 * self.x_rate_controller.apply(x_rate_e)
-
-        y_rate_e = y_rate_ref - y_rate
-        roll_ref = -0.73/thrust * self.y_rate_controller.apply(y_rate_e)
-
-        pitch_e = pitch_ref - pitch_angle
-        pitch_rate_ref = self.pitch_controller.apply(pitch_e)
-        pitch_rate_e = pitch_rate_ref - pitch_rate        
-        tau_y = self.pitch_rate_controller.apply(pitch_rate_e)
-
-
-        # print("thrust={2:>{0}.{1}f}".format(10,3,thrust))
-        # print("    x_rate_ref={2:>{0}.{1}f};        x_rate={3:>{0}.{1}f}".format(6,3,x_rate_ref,x_rate))
-        # print("     pitch_ref={2:>{0}.{1}f};   pitch_angle={3:>{0}.{1}f}".format(6,3,pitch_ref,pitch_angle))
-        # print("pitch_rate_ref={2:>{0}.{1}f};     pitch_rate={3:>{0}.{1}f};   tau_y={4:>{0}.{1}f}".format(6,3,pitch_rate_ref,pitch_rate,tau_y))
-
-        roll_e = roll_ref - roll_angle
-        roll_rate_ref = self.roll_controller.apply(roll_e)
-        roll_rate_e = roll_rate_ref - roll_rate        
-        tau_x = self.roll_rate_controller.apply(roll_rate_e)
-
-        yaw_e = yaw_ref - yaw_angle
-        yaw_rate_ref = self.yaw_controller.apply(yaw_e)
-        yaw_rate_e = yaw_rate_ref - yaw_rate
-        tau_z = self.yaw_rate_controller.apply(yaw_rate_e)
-
-        # print("thrust={2:>{0}.{1}f}".format(10,3,thrust))
-        # print("     yaw_ref={2:>{0}.{1}f};   yaw_angle={3:>{0}.{1}f}".format(6,3,yaw_ref,yaw_angle))
-        # print("yaw_rate_ref={2:>{0}.{1}f};    yaw_rate={3:>{0}.{1}f};   tau_z={4:>{0}.{1}f}".format(6,3,yaw_rate_ref,yaw_rate,tau_z))
-
-
-        # print("  yaw={2:>{0}.{1}f};   yaw_rate={3:>{0}.{1}f}".format(6,3,yaw_angle,yaw_rate))
-        # print("pitch={2:>{0}.{1}f}; pitch_rate={3:>{0}.{1}f}".format(6,3,pitch_angle,pitch_rate))
-        # print(" roll={2:>{0}.{1}f};  roll_rate={3:>{0}.{1}f}".format(6,3,roll_angle,roll_rate))
-
-        # print("x rate={2:>{0}.{1}f}; y rate={3:>{0}.{1}f}".format(6,3,x_rate,y_rate))
-
-        #np.savetxt(self.f,np.array([obs[4]]))
-
-        
-        #np.savetxt(self.q,r.reshape((1,9),order='F'))
-        
-
-        return np.dot(self.B_inv, np.array([[thrust,tau_x,tau_y,tau_z]]).transpose())
 
 
 

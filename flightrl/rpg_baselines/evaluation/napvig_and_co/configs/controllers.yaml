@@ -1,0 +1,4 @@
+pointCloud_gen:
+  frame_height: 128 # pixels
+  frame_width: 128 # pixels
+  camera_FOV: 90
