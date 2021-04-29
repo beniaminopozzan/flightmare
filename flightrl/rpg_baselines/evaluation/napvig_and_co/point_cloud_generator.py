@@ -5,12 +5,15 @@ from scipy.spatial.transform import Rotation as R
 
 class PointCloudGenerator():
     def __init__(self,
-                frame_height : int = 128,
-                frame_width : int = 128,
-                camera_FOV : int = 90):
+                frame_height,
+                frame_width,
+                camera_FOV,
+                camera_rot,
+                camera_pos):
         self._frame_height = frame_height # number of vertical pixels
         self._frame_width = frame_width # number of horizontal pixels
         self._camera_FOV = camera_FOV * np.pi / 180 # field of view of the camera
+        self._camera_pos = camera_pos # position of the camera w.r.t. the drone
 
         self.fl = 0.5 / np.tan(self._camera_FOV/2) # focal distance
         # the (x,y) coordinates in the image plane are mapped in the range (-0.5, 0.5)
@@ -33,7 +36,7 @@ class PointCloudGenerator():
                 ind = ind + 1
         
         # rotate camera mask
-        r = (R.from_euler('ZYX', [-90.0, 0.0, 5.0], degrees=True)).as_matrix()
+        r = (R.from_euler('ZYX', camera_rot, degrees=True)).as_matrix()
         self.mask = np.transpose( np.dot(r, self.mask.transpose()) )
 
     # given a depthMap compute the point cloud
@@ -41,6 +44,6 @@ class PointCloudGenerator():
         # apply mask
         point_cloud = self.mask * images.reshape((self._frame_height*self._frame_width,1),order='F')
         # move camera frame origin w.r.t. quadrotor frame origin
-        point_cloud = point_cloud + [0.176, 0.0, 0.05]
+        point_cloud = point_cloud + self._camera_pos
         
         return point_cloud

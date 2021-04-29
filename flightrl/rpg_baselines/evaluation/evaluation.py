@@ -132,7 +132,7 @@ def main():
             
             if done:
                 episodes_terminal_goal_number[n_roll] = high_level_planner_goal_reached_number
-                high_level_planner.to_next_run()      
+                high_level_planner.to_next_run()  
                     
             if done_from_high_level_planner:
                 obs = env.reset()
@@ -143,6 +143,8 @@ def main():
                 
         episodes_lengths[n_roll] = ep_len
         n_roll = n_roll + 1
+        #reset controllers
+        obstacle_avoidance_agent.reset()    
         
         
         

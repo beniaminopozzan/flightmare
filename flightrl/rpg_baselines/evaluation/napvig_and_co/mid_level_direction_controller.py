@@ -1,18 +1,15 @@
 import numpy as np
 
 class MidLevelDirectionController:
-    def __init__(self):
-        self.komega = 1.0
-        self.kx = 3.0
-        self.ky = 0.0
-        self.kz = 3.0
+    def __init__(self, k_omega, k, sigma):
 
-        self.gain_matrix = np.diag([self.kx, self.ky, self.kz])
+        self.komega = k_omega
+        self.gain_matrix = np.diag(k)
+        self.sigma = sigma
 
     def genQuatrotorReferences(self, des_vel):
         vx = des_vel[0]
         vy = des_vel[1]
-        vz = des_vel[2]
 
         # misalignment angle
         alpha = np.angle(vx+vy*1j)
@@ -20,11 +17,12 @@ class MidLevelDirectionController:
         # alignment reference generator
         yaw_rate_ref = self.komega * alpha
 
-        quadrotor_ref = np.empty((4,1))
-        quadrotor_ref[0,0] = yaw_rate_ref
+        quadrotor_ref = np.empty(4)
+        quadrotor_ref[0] = yaw_rate_ref
 
-        lin_vels = np.dot(self.gain_matrix, des_vel.reshape(3,1)) * np.e**(-alpha**2 / (2*(50)**2))
-        quadrotor_ref[1:,:] = lin_vels
+        # desired linear velocity: scaled by the gain matrix and by the misalignment angle
+        lin_vels = np.dot(self.gain_matrix, des_vel.reshape(3,1)) * np.e**(-alpha**2 / (2*(self.sigma)**2))
+        quadrotor_ref[1:] = lin_vels.reshape(-1)
 
-        return quadrotor_ref.ravel()
+        return quadrotor_ref
         

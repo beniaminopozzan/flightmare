@@ -3,40 +3,60 @@ import numpy as np
 from scipy.spatial.transform import Rotation as R
 
 class QuadrotorPIDcontroller():
-    def __init__(self):
+    def __init__(
+        self,
+        control_params,
+    ):
         # allocation matrix
+        kappa = control_params['kappa']
+        arm_l = control_params['arm_l']
         self.B =  np.empty((4,4))
         self.B[0,:] = [1, 1, 1, 1]
-        self.B[1,:] = 0.17 * np.sqrt(0.5)* np.array([1, -1, -1, 1])
-        self.B[2,:] = 0.17 * np.sqrt(0.5)* np.array([-1, -1, 1, 1])
-        self.B[3,:] = 0.016 * np.array([1, -1, 1, -1])
+        self.B[1,:] = arm_l * np.sqrt(0.5)* np.array([1, -1, -1, 1])
+        self.B[2,:] = arm_l * np.sqrt(0.5)* np.array([-1, -1, 1, 1])
+        self.B[3,:] = kappa * np.array([1, -1, 1, -1])
         self.B_inv = np.linalg.inv(self.B)
+
         
-        # x and y rate, body frame, controllers. Outputs: desired linear acceleration
+        self.mass = control_params['mass']
+        self.g = control_params['g']
+
+        Ts = control_params['T_s']
+        
+        # x and y rate, body frame, controllers. Outputs: desired linear thrusts [N]
         # that is then converted to desired angle
-        self.x_rate_controller = PID(k_p=5, u_max=9.81*np.pi/4, u_min=-9.81*np.pi/4)
-        self.y_rate_controller = PID(k_p=5, u_max=9.81*np.pi/4, u_min=-9.81*np.pi/4)
+        self.x_rate_controller = PID(T_s=Ts,**control_params['x_rate_c_params'])
+        self.y_rate_controller = PID(T_s=Ts,**control_params['y_rate_c_params'])
+        # pitch and roll saturators [rad]
+        self.pitch_angle_saturator = PID(T_s=Ts,**control_params['pitch_angle_saturator'])
+        self.roll_angle_saturator = PID(T_s=Ts,**control_params['roll_angle_saturator'])
 
-        # pitch controller. Output: desired pitch rate
-        self.pitch_controller = PID(k_p=5, u_max=2, u_min=-2)
-        # pitch rate controller. Output: desired pitch torque
-        self.pitch_rate_controller = PID(k_p=1, u_max=2.0, u_min=-2.0)
-        # roll controller. Output: desired roll rate
-        self.roll_controller = PID(k_p=5, u_max=2, u_min=-2)
-        # roll rate controller. Output: desired roll torque
-        self.roll_rate_controller = PID(k_p=1, u_max=2.0, u_min=-2.0)
+        # pitch controller. Output: desired pitch rates [rad/s]
+        self.pitch_controller = PID(T_s=Ts,**control_params['pitch_controller'])
+        # pitch rate controller. Output: desired pitch torque [Nm]
+        self.pitch_rate_controller = PID(T_s=Ts,**control_params['pitch_rate_controller'])
+        # roll controller. Output: desired roll rate [rad/s]
+        self.roll_controller = PID(T_s=Ts,**control_params['roll_controller'])
+        # roll rate controller. Output: desired roll torque [Nm]
+        self.roll_rate_controller = PID(T_s=Ts,**control_params['roll_rate_controller'])
 
-        # yaw controller. Output: desired yaw rate
-        # self.yaw_controller = PID(k_p=2, u_max=0.5, u_min=-0.5)
-        # yaw rate controller. Output: desired yaw torque
-        self.yaw_rate_controller = PID(k_p=1,u_max=0.05,u_min=-0.05)
+        # yaw rate controller. Output: desired yaw torque [Nm]
+        self.yaw_rate_controller = PID(T_s=Ts,**control_params['yaw_rate_controller'])
 
-        # altitude rate controller. Output: desired thrust (gravity not compensated)
-        self.altitude_rate_controller = PID(k_p=10, k_i=2, k_d=1)
-
-        # files for debugging
-        #self.f = open('pitch.dat','a')
-        #self.q = open('Rmat.dat','a')
+        # altitude rate controller. Output: desired thrust [N] (gravity not compensated)
+        self.altitude_rate_controller = PID(T_s=Ts,**control_params['altitude_rate_controller'])
+    
+    def reset(self):
+        self.x_rate_controller.reset()
+        self.y_rate_controller.reset()
+        self.pitch_angle_saturator.reset()
+        self.roll_angle_saturator.reset()
+        self.pitch_controller.reset()
+        self.pitch_rate_controller.reset()
+        self.roll_controller.reset()
+        self.roll_rate_controller.reset()
+        self.yaw_rate_controller.reset()
+        self.altitude_rate_controller.reset()
     
     def apply(self, obs, ref):
 
@@ -60,13 +80,15 @@ class QuadrotorPIDcontroller():
 
         # apply elevation rate controller
         elev_rate_e = elev_rate_ref - elev_rate
-        thrust = self.altitude_rate_controller.apply(elev_rate_e) + 0.73*9.81
+        thrust = self.altitude_rate_controller.apply(elev_rate_e) + self.mass*self.g
         
         # apply linear velocities controllers
         x_rate_e = x_rate_ref - x_rate
-        pitch_ref = 0.73/thrust * self.x_rate_controller.apply(x_rate_e)
+        pitch_ref = self.mass/thrust * self.x_rate_controller.apply(x_rate_e)
+        pitch_ref = self.pitch_angle_saturator.apply(pitch_ref)
         y_rate_e = y_rate_ref - y_rate
-        roll_ref = -0.73/thrust * self.y_rate_controller.apply(y_rate_e)
+        roll_ref = -self.mass/thrust * self.y_rate_controller.apply(y_rate_e)
+        roll_ref = self.roll_angle_saturator.apply(roll_ref)
 
         # apply pitch controllers (angle and rate)
         pitch_e = pitch_ref - pitch_angle
@@ -80,9 +102,7 @@ class QuadrotorPIDcontroller():
         roll_rate_e = roll_rate_ref - roll_rate        
         tau_x = self.roll_rate_controller.apply(roll_rate_e)
 
-        # apply yaw controller (rate ONLY)
-        #yaw_e = yaw_ref - yaw_angle
-        #yaw_rate_ref = self.yaw_controller.apply(yaw_e)
+        # apply yaw rate ontroller 
         yaw_rate_e = yaw_rate_ref - yaw_rate
         tau_z = self.yaw_rate_controller.apply(yaw_rate_e)
 
@@ -108,7 +128,7 @@ class QuadrotorPIDcontroller():
         #np.savetxt(self.q,r.reshape((1,9),order='F'))
         
 
-        return np.dot(self.B_inv, np.array([[thrust,tau_x,tau_y,tau_z]]).transpose())
+        return ( np.dot(self.B_inv, np.array([[thrust,tau_x,tau_y,tau_z]]).transpose()) - self.mass*self.g/4) / (self.mass*self.g/2)
     
     ### unused methods    
     # def retrieve_yaw(self,obs):
@@ -150,8 +170,14 @@ class PID():
         self.e_old = 0.0
         # past derivator output
         self.u_d = 0.0
-
         
+    def reset(self):
+        # integrator output
+        self.u_i = 0.0
+        # past input value for the discrete derivative
+        self.e_old = 0.0
+        # past derivator output
+        self.u_d = 0.0        
     
     def apply(self, e):
         # proportional component
