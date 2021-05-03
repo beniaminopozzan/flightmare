@@ -67,7 +67,8 @@ class HighLevelPlanner():
         self.goal_reached_number = 5
         safe_num_run = (num_run + 1)*(num_run<(self.num_runs-1)) + num_run*(num_run==(self.num_runs-1))
         return self.goals_matrix[safe_num_run, self.internal_state, :], done, float(self.goal_reached_number)
-        
+      
+      print ("+++++ REACHED GOAL %d" % self.internal_state)
       self.internal_state += 1
 
     return self.goals_matrix[num_run, self.internal_state, :], done, float(self.goal_reached_number)

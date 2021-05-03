@@ -1,5 +1,7 @@
 import os
 from ruamel.yaml import YAML
+from napvig_and_co.napvig import NapvigParams
+from napvig_and_co.landscape import LandscapeParams
 
 def loadParameters():
     quad_params = YAML().load(open(os.environ["FLIGHTMARE_PATH"] +
@@ -23,6 +25,27 @@ def loadParameters():
     mid_level_control_params = control_params['mid_level_controller']
     
     return point_cloud_params, PID_control_params, mid_level_control_params
+
+def load_napvig_params ():
+    napvig_params = NapvigParams ()
+    landscape_params = LandscapeParams ()
+
+    config_yaml = YAML().load(open(os.environ["FLIGHTMARE_PATH"] +
+                "/flightrl/rpg_baselines/evaluation/napvig_and_co/configs/napvig.yaml", 'r'))
+    
+    napvig_params.gradient_step_size = config_yaml["napvig"]["gradient_step_size"]
+    napvig_params.termination_distance = config_yaml["napvig"]["termination_distance"]
+    napvig_params.termination_count = config_yaml["napvig"]["termination_count"]
+    napvig_params.step_ahead_size = config_yaml["napvig"]["step_ahead_size"]
+    napvig_params.method = config_yaml["napvig"]["method"]
+
+    landscape_params.measure_radius = config_yaml["landscape"]["measure_radius"]
+    landscape_params.smooth_radius = config_yaml["landscape"]["smooth_radius"]
+    landscape_params.precision = config_yaml["landscape"]["precision"]
+    landscape_params.dim = config_yaml["landscape"]["dimensions"]
+    landscape_params.decimation = config_yaml["landscape"]["decimation"]
+
+    return napvig_params, landscape_params
 
 if __name__=='__main__':
     loadParameters()

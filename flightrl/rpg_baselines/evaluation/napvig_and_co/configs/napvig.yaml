@@ -1,0 +1,12 @@
+napvig:
+  step_ahead_size: 0.5
+  gradient_step_size: 0.0
+  termination_distance: 0.01
+  termination_count: 0
+  method: goal # {straight, goal}
+landscape:
+  measure_radius: 0.4
+  smooth_radius: 0.1
+  precision: 1000
+  dimensions: 3
+  decimation: 100

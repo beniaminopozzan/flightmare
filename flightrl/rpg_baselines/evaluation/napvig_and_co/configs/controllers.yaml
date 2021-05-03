@@ -6,7 +6,7 @@ pointCloud_gen:
 PID_control_params:
   g: 9.81 # gravity acceleration
   x_rate_c_params: # from linear velocity [m/s] to linear thrust [N]
-    k_p: 5.0
+    k_p: 3.0
     k_i: 0.0
     k_d: 0.0
     T_f: 0.0
@@ -14,7 +14,7 @@ PID_control_params:
     u_max: 10.0 # [N]
     u_min: -10.0 # [N]
   y_rate_c_params: # from linear velocity [m/s] to linear thrust [N]
-    k_p: 5.0
+    k_p: 3.0
     k_i: 0.0
     k_d: 0.0
     T_f: 0.0
