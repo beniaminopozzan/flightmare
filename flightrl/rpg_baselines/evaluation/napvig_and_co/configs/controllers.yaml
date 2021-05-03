@@ -1,0 +1,94 @@
+pointCloud_gen:
+  frame_height: 128 # pixels
+  frame_width: 128 # pixels
+  camera_FOV: 90 # degrees
+
+PID_control_params:
+  g: 9.81 # gravity acceleration
+  x_rate_c_params: # from linear velocity [m/s] to linear thrust [N]
+    k_p: 5.0
+    k_i: 0.0
+    k_d: 0.0
+    T_f: 0.0
+    k_awu: 0.0
+    u_max: 10.0 # [N]
+    u_min: -10.0 # [N]
+  y_rate_c_params: # from linear velocity [m/s] to linear thrust [N]
+    k_p: 5.0
+    k_i: 0.0
+    k_d: 0.0
+    T_f: 0.0
+    k_awu: 0.0
+    u_max: 10.0 # [N]
+    u_min: -10.0 # [N]
+  pitch_angle_saturator: # from linear thrust [N] to angle [rad]
+    k_p: 1.0
+    k_i: 0.0
+    k_d: 0.0
+    T_f: 0.0
+    k_awu: 0.0
+    u_max: 0.785 # [rad]
+    u_min: -0.785 # [rad]
+  roll_angle_saturator: # from linear thrust [N] to angle [rad]
+    k_p: 1.0
+    k_i: 0.0
+    k_d: 0.0
+    T_f: 0.0
+    k_awu: 0.0
+    u_max: 0.785  # [rad]
+    u_min: -0.785  # [rad]
+  pitch_controller: # from angle [rad] to angle rate [rad/s]
+    k_p: 5.0
+    k_i: 0.0
+    k_d: 0.0
+    T_f: 0.0
+    k_awu: 0.0
+    u_max: 2.0 # [rad/s]
+    u_min: -2.0 # [rad/s]
+  pitch_rate_controller: # from angle rate [rad/s] to torque [Nm]
+    k_p: 1.0
+    k_i: 0.0
+    k_d: 0.0
+    T_f: 0.0
+    k_awu: 0.0
+    u_max: 2.0 # [Nm]
+    u_min: -2.0 # [Nm]
+  roll_controller: # from angle [rad] to angle rate [rad/s]
+    k_p: 5.0
+    k_i: 0.0
+    k_d: 0.0
+    T_f: 0.0
+    k_awu: 0.0
+    u_max: 2.0 # [rad/s]
+    u_min: -2.0 # [rad/s]
+  roll_rate_controller: # from angle rate [rad/s] to torque [Nm]
+    k_p: 1.0
+    k_i: 0.0
+    k_d: 0.0
+    T_f: 0.0
+    k_awu: 0.0
+    u_max: 2.0 # [Nm]
+    u_min: -2.0 # [Nm]
+  yaw_rate_controller: # from angle rate [rad/s] to torque [Nm]
+    k_p: 1.0
+    k_i: 0.0
+    k_d: 0.0
+    T_f: 0.0
+    k_awu: 0.0
+    u_max: 0.05 # [Nm]
+    u_min: -0.05 # [Nm]
+  altitude_rate_controller: # from linear rate to thrust
+    k_p: 10.0
+    k_i: 2.0
+    k_d: 1.0
+    T_f: 0.0
+    k_awu: 0.0
+    u_max: .inf # [N]
+    u_min: -.inf # [N]
+
+# from NAPVIG to PIDs
+mid_level_controller:
+  k_omega: 1.0
+  k: [5.0 , 0.7, 5.0]
+  sigma: 0.9
+  
