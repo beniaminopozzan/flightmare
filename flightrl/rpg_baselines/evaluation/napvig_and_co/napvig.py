@@ -23,6 +23,7 @@ class NapvigParams:
     termination_distance : float = math.nan
     termination_count : int = -1
     step_ahead_size : float = math.nan
+    prediction_window: int = -1
     method: str = ""
 
 class Napvig:
@@ -52,7 +53,8 @@ class Napvig:
 
             termination_condition = (update_distance < self.params.termination_distance) or iter_count > self.params.termination_count
             iter_count += 1
-        print ("niter %d " % iter_count)
+        #print ("n iter %d" % iter_count)
+            
         return x_curr
 
     def next_search (self, current, next):
@@ -70,6 +72,26 @@ class Napvig:
         return q.position + self.params.step_ahead_size * q.search
 
     def compute (self, q):
+
+        collides = False
+        count = 0
+        next = []
+
+        first_step = self.compute_one (q)
+
+        while (not collides and count < self.params.prediction_window):
+            next = self.compute_one (q)
+            
+            # Check collision
+            if (self.landscape.collides (next.position)):
+                collides = True
+
+        if (collides):
+            return State ()
+
+        return first_step
+
+    def compute_one (self, q):
         # If directed to goal, correct search
         if (self.params.method == "goal"):
             q.search = self.next_search (q.position, self.goal)

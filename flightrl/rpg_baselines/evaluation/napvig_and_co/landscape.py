@@ -12,6 +12,7 @@ class LandscapeParams:
     precision: int = 0
     dim: int = 0
     decimation: int = 0
+    min_distance: float = 0
 
 class Landscape:
     def __init__(self, params):
@@ -23,8 +24,13 @@ class Landscape:
         measures = torch.from_numpy (measures_np)
         self.measures = measures.view ([measures.size(0), 1, self.params.dim])
         self.measures = self.measures[::self.params.decimation, :, :]
-        print ("sz")
-        print (self.measures.shape)
+
+    def gamma_distance (self, distance):
+	    return math.exp (-(distance * distance)/(2 * self.params.measure_radius * self.params.measure_radius))
+    
+    def collides (self, x):
+        return self.value (x) > self.gamma_distance (self.params.min_distance)
+
     def get_no_amplification_gain (self):
         sqMR = self.params.measure_radius ** 2
         sqSR = self.params.smooth_radius ** 2
