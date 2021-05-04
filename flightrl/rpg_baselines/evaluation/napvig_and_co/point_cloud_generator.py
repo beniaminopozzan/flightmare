@@ -9,11 +9,13 @@ class PointCloudGenerator():
                 frame_width,
                 camera_FOV,
                 camera_rot,
-                camera_pos):
+                camera_pos,
+                max_dist):
         self._frame_height = frame_height # number of vertical pixels
         self._frame_width = frame_width # number of horizontal pixels
         self._camera_FOV = camera_FOV * np.pi / 180 # field of view of the camera
         self._camera_pos = camera_pos # position of the camera w.r.t. the drone
+        self._max_dist = max_dist # maximum distance that is converted to point
 
         self.fl = 0.5 / np.tan(self._camera_FOV/2) # focal distance
         # the (x,y) coordinates in the image plane are mapped in the range (-0.5, 0.5)
@@ -41,8 +43,11 @@ class PointCloudGenerator():
 
     # given a depthMap compute the point cloud
     def generate_point_cloud_from_depthmap(self, images):
+        images = images.reshape((self._frame_height*self._frame_width,1),order='F')
+        # filter out values too far away from the drone
+        indexes = np.asarray(images<=self._max_dist).nonzero()
         # apply mask
-        point_cloud = self.mask * images.reshape((self._frame_height*self._frame_width,1),order='F')
+        point_cloud = self.mask[indexes[0],:] * images[indexes[0]]
         # move camera frame origin w.r.t. quadrotor frame origin
         point_cloud = point_cloud + self._camera_pos
         

@@ -2,6 +2,7 @@ pointCloud_gen:
   frame_height: 128 # pixels
   frame_width: 128 # pixels
   camera_FOV: 90 # degrees
+  max_dist: 6 # metre
 
 PID_control_params:
   g: 9.81 # gravity acceleration
