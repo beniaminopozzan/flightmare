@@ -54,7 +54,7 @@ class Napvig:
             termination_condition = (update_distance < self.params.termination_distance) or iter_count > self.params.termination_count
             iter_count += 1
         #print ("n iter %d" % iter_count)
-            
+        
         return x_curr
 
     def next_search (self, current, next):

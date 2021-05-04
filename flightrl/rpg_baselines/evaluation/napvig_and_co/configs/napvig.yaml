@@ -1,5 +1,5 @@
 napvig:
-  step_ahead_size: 0.7
+  step_ahead_size: 0.4
   gradient_step_size: 0.9
   termination_distance: 0.07
   termination_count: 50
@@ -7,7 +7,7 @@ napvig:
   method: goal # {straight, goal}
 landscape:
   measure_radius: 0.9
-  smooth_radius: 0.2
+  smooth_radius: 0.05
   precision: 1000
   dimensions: 3
   decimation: 100

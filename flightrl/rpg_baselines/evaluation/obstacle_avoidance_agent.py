@@ -9,6 +9,7 @@ from napvig_and_co.point_cloud_generator import PointCloudGenerator
 from napvig_and_co.quadrotor_PID_controller import QuadrotorPIDcontroller
 from napvig_and_co.mid_level_direction_controller import MidLevelDirectionController
 from napvig_and_co.napvig import Napvig, State
+from napvig_and_co.debug import debug_slice
 from scipy.spatial.transform import Rotation as R
 
 import torch
@@ -66,6 +67,10 @@ class ObstacleAvoidanceAgent():
     q = State ()
     self.napvig.set_goal (goal_body)
     self.napvig.landscape.set_measures (point_cloud)
+
+    # Get slice debug
+    print ("DEBUGGING")
+    debug_slice (self.napvig, q)
 
     # Get trajectory sample
     target_state_body = self.napvig.compute (q)
