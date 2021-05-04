@@ -38,7 +38,7 @@ PID_control_params:
     u_max: 0.385  # [rad]
     u_min: -0.385  # [rad]
   pitch_controller: # from angle [rad] to angle rate [rad/s]
-    k_p: 3.0
+    k_p: 5.0
     k_i: 0.0
     k_d: 0.0
     T_f: 0.0
@@ -54,7 +54,7 @@ PID_control_params:
     u_max: 2.0 # [Nm]
     u_min: -2.0 # [Nm]
   roll_controller: # from angle [rad] to angle rate [rad/s]
-    k_p: 3.0
+    k_p: 5.0
     k_i: 0.0
     k_d: 0.0
     T_f: 0.0
@@ -89,6 +89,6 @@ PID_control_params:
 # from NAPVIG to PIDs
 mid_level_controller:
   k_omega: 1.0
-  k: [5.0 , 0.7, 5.0]
-  sigma: 0.9
+  k: [3.0 , 0.1, 1.0]
+  sigma: 0.5
   

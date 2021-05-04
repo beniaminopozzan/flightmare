@@ -22,19 +22,23 @@ from mpl_toolkits.mplot3d import Axes3D
 
 fig = plt.figure()
 plt.ion()
-depthMap = np.loadtxt("slice_values")
-im = plt.imshow(depthMap)
-plt.colorbar(label='Distance to Camera')
-plt.title('Depth image')
-plt.xlabel('X Pixel')
-plt.ylabel('Y Pixel')
+ax = fig.gca(projection='3d')
+
+pcl = np.loadtxt("points")
+print (pcl)
+im = ax.scatter (pcl[:,0],pcl[:,1],pcl[:,2],s=3, color="black")
+ax.set_xlabel ('x')
+ax.set_ylabel ('y')
+ax.set_zlabel ('z')
 
 while True:
     try:
-        depthMap = np.loadtxt("slice_values")
-        im.set_data(depthMap)
+        pcl = np.loadtxt("points")
+        fig.cla ()
+        im = ax.scatter (pcl[:,0],pcl[:,1],pcl[:,2],s=3, color="black")
+        fig.draw ()
     except:
         pass
     
     # show plot
-    plt.pause(0.02)
+    plt.pause(0.2)

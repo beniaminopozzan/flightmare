@@ -72,7 +72,14 @@ class Napvig:
         return q.position + self.params.step_ahead_size * q.search
 
     def compute (self, q):
+        next = self.compute_one (q)
 
+        # Check collision
+        if (self.landscape.collides (next.position)):
+            print ("COLLIDEEEEEES")
+            return State ()
+        return next
+        
         collides = False
         count = 0
         next = []

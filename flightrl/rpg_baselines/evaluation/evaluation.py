@@ -74,7 +74,7 @@ def main():
     obstacle_avoidance_agent = ObstacleAvoidanceAgent(num_envs=env.num_envs, num_acts=env.num_acts)                    
     
     # set object density to zero 
-    object_density_fractions = np.zeros([env.num_envs], dtype=np.float32)
+    object_density_fractions = 10 + np.zeros([env.num_envs], dtype=np.float32)
     env.set_objects_densities(object_density_fractions = object_density_fractions)
     
     # Wait for Unity to be fully ready

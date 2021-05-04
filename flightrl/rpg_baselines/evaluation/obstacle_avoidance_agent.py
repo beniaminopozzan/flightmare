@@ -55,8 +55,7 @@ class ObstacleAvoidanceAgent():
     image = images[0,:,:]
 
     # save image
-    np.savetxt("flightrl/rpg_baselines/evaluation/depthImage.dat", image)
-
+    #np.savetxt("/root/challenge/depthImage.dat", image)
     # Pointcloud generation
     point_cloud = self._point_cloud_generator.generate_point_cloud_from_depthmap(image)
 
@@ -72,8 +71,9 @@ class ObstacleAvoidanceAgent():
     self.napvig.landscape.set_measures (point_cloud)
 
     # Get slice debug
-    #print ("DEBUGGING")
-    #debug_slice (self.napvig, q)
+    print ("DEBUGGING")
+    #points = debug_slice (self.napvig, q)
+    np.savetxt ('/root/challenge/points', self.napvig.landscape.measures.squeeze())
 
     # Get trajectory sample
     target_state_body = self.napvig.compute (q)
