@@ -24,7 +24,7 @@ class Landscape:
         measures = torch.from_numpy (measures_np)
         self.measures = measures.view ([measures.size(0), 1, self.params.dim])
         self.measures = self.measures[::self.params.decimation, :, :]
-        print (self.measures)
+        
     def gamma_distance (self, distance):
 	    return math.exp (-(distance * distance)/(2 * self.params.measure_radius * self.params.measure_radius))
     

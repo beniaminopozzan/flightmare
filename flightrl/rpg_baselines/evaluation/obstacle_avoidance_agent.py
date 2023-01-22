@@ -71,8 +71,8 @@ class ObstacleAvoidanceAgent():
     self.napvig.landscape.set_measures (point_cloud)
 
     # Get slice debug
-    print ("DEBUGGING")
-    #points = debug_slice (self.napvig, q)
+    #print ("DEBUGGING")
+    points = debug_slice (self.napvig, q)
     np.savetxt ('/root/challenge/points', self.napvig.landscape.measures.squeeze())
 
     # Get trajectory sample
@@ -85,6 +85,9 @@ class ObstacleAvoidanceAgent():
     vel_target_ctl = R.from_euler ("Z", self.state.rpy[0]).apply (vel_target_world, inverse=True)
 
     quadrotor_refs = self._mid_level_dir_controlelr.genQuatrotorReferences(vel_target_ctl)
+
+    print("r: " + str((current_goal_position - self.state.position)/np.linalg.norm(current_goal_position - self.state.position)))
+    print("n: " + str(vel_target_world) + '\n')
 
     action = np.zeros([self._num_envs,self._num_acts], dtype=np.float32)
     action[0,:] = self._quadrotor_controller.apply(obs[0,:12], quadrotor_refs).reshape(-1)
